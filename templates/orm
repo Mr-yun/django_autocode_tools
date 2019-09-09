@@ -1,0 +1,15 @@
+# -*- coding:utf-8 -*-
+from {{app}}.models import {{view_name}}
+
+def select_{{file_name}}_all():
+    return {{view_name}}.objects.all()
+
+
+def select_{{file_name}}_id(id):
+    if isinstance(id,list):
+        return {{view_name}}.objects.get(id__in=id)
+    else:
+        return {{view_name}}.objects.filter(id=id)
+
+def delete_{{file_name}}_id(id):
+    {{view_name}}.objects.get(id=id).delete()

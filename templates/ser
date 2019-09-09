@@ -1,0 +1,18 @@
+# -*- coding:utf-8 -*-
+
+from rest_framework import serializers
+
+from {{app}}.models import {{view_name}}
+
+
+class Ser{{view_name}}(serializers.ModelSerializer):
+
+    class Meta:
+        model = {{view_name}}
+        fields = ('id',{{fields}})
+
+    def update(self, instance, validated_data):
+        {{update}}
+        instance.save()
+        return instance
+

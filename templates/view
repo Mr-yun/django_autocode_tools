@@ -1,0 +1,41 @@
+# -*- coding:utf-8 -*-
+from rest_framework.views import APIView
+
+from django_autocode_tools.wrapper.http_wrapper import JsonRsp
+
+
+
+class View{{view_name}}(APIView):
+    # url(r'/{{file_name}}',View{{view_name}}.as_view())
+
+
+    def post(self, request, *args, **kwargs):
+        obj_{{file_name}} = create_{{file_name}}(request.body.decode('utf-8'))
+        jsp = JsonRsp({'result': 'success','id':obj_{{file_name}}.id})
+        return jsp
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('type') == 'index':
+            list_{{file_name}} = select_{{file_name}}_all()
+            jsp = JsonRsp({'result': 'success',
+                           'list_{{file_name}}': Ser{{view_name}}(list_{{file_name}},many=True).data})
+
+        elif request.GET.get('type') == 'dtl':
+            obj_{{file_name}} = select_{{file_name}}_id(request.GET.get('id'))
+            jsp = JsonRsp({'result': 'success','{{file_name}}':Ser{{view_name}}(obj_{{file_name}}).data})
+        else:
+            jsp = JsonRsp({'result': 'failure','msg':'url error'})
+        return jsp
+
+
+    def put(self, request, *args, **kwargs):
+        obj_{{file_name}} = select_{{file_name}}_id(request.GET.get('id'))
+        Ser{{view_name}}().update(obj_{{file_name}},request.body.decode('utf-8'))
+        jsp = JsonRsp({'result': 'failure','msg':'url error'})
+        return jsp
+
+
+    def delete(self, request, *args, **kwargs):
+        delete_{{file_name}}_id(request.GET.get('id'))
+        jsp = JsonRsp({'result': 'success'})
+        return jsp
