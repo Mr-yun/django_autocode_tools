@@ -1,9 +1,8 @@
 from __future__ import print_function
 
 from django.core.management.base import BaseCommand
-from django_crontab.crontab import Crontab
-
 from django_autocode_tools.auto_code import AutoCode
+from django_crontab.crontab import Crontab
 
 
 class Command(BaseCommand):
@@ -13,7 +12,7 @@ class Command(BaseCommand):
     refresh: refreshes serialized file'''
 
     def add_arguments(self, parser):
-        parser.add_argument('subcommand', choices=['add',  'remove','refresh'],
+        parser.add_argument('subcommand', choices=['add', 'remove', 'refresh', 'zdy'],
                             help=self.help)
         parser.add_argument('jobhash', nargs='?')
 
@@ -25,5 +24,7 @@ class Command(BaseCommand):
             auto.remove()
         elif options['subcommand'] == 'refresh':
             auto.refresh()
+        elif options['subcommand'] == 'zdy':
+            auto.zdy()
         else:
             print(self.help)

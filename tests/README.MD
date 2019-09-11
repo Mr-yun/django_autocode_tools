@@ -1,0 +1,1 @@
+运行 python manage.py auto_code add Books 试一下吧

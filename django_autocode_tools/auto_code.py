@@ -1,53 +1,54 @@
+# -*- coding:utf-8 -*-
 from imp import load_source
 from os import path, getcwd, makedirs, remove as file_remove
 
 from django.conf import settings
-from jinja2 import FileSystemLoader, Environment
-
 from django_autocode_tools.app_settings import Settings
+from jinja2 import FileSystemLoader, Environment
 
 
 class AutoCode(object):
-    def __find_add_table(self):
+    def __find_oper_table(self):
+        '''根据APP列表(倒叙)，自动查找操作的表'''
         attribute = []
         for z in settings.INSTALLED_APPS[::-1]:
-            attribute = self.get_attribute(z)
             self.app = z
+            attribute = self.get_attribute()
+
             if len(attribute) > 0:
                 break
         return attribute
 
     def __check_folder(self):
-        if not path.exists(self.settings.AUTO_CODE_VIEW_SAVE_PATH):
-            makedirs(self.settings.AUTO_CODE_VIEW_SAVE_PATH)
 
-        if not path.exists(self.settings.AUTO_CODE_ORM_SAVE_PATH):
-            makedirs(self.settings.AUTO_CODE_ORM_SAVE_PATH)
-
-        if not path.exists(self.settings.AUTO_CODE_SER_SAVE_PATH):
-            makedirs(self.settings.AUTO_CODE_SER_SAVE_PATH)
+        for dir_path in [self.settings.AUTO_CODE_VIEW_SAVE_PATH,
+                         self.settings.AUTO_CODE_ORM_SAVE_PATH,
+                         self.settings.AUTO_CODE_SER_SAVE_PATH]:
+            if not path.exists(dir_path):
+                makedirs(dir_path)
 
     def __init__(self, **options):
         self.view_name = options.get('jobhash')
         self.file_name = self.view_name.lower()
 
+        self.old_template_path = path.join(path.abspath(path.dirname(__file__)), 'templates')
         self.settings = Settings(settings)
         self.base_dir = getcwd()
 
         if self.settings.AUTO_CODE_ROOT_APP is None:
-            self.attribute = self.__find_add_table()
+            self.attribute = self.__find_oper_table()
         else:
             self.app = self.settings.AUTO_CODE_ROOT_APP
-            self.attribute = self.get_attribute(self.settings.AUTO_CODE_ROOT_APP)
+            self.attribute = self.get_attribute()
 
-    def get_attribute(self, app_name):
+    def get_attribute(self):
         begin_bit = False
         attribute = []
-        app_path = path.join(self.base_dir, app_name)
+        app_path = path.join(self.base_dir, self.app)
         models_path = path.join(app_path, 'models.py')
         if path.exists(models_path):
-            module_models = load_source(app_name + '.models', models_path)
-            cls_table = getattr(module_models, self.view_name, None)
+            module_models = __import__(self.app + '.models', self.app)
+            cls_table = getattr(module_models.models, self.view_name, None)
             if cls_table is not None:
                 with open(models_path, 'r') as f:
                     for line in f:
@@ -80,19 +81,25 @@ class AutoCode(object):
 
         return attribute
 
+    def __get_templates(self, filename):
+        if path.exists(path.join(self.settings.AUTO_CODE_TEMPLATES_VIEW, filename)):
+            templateLoader = FileSystemLoader(self.settings.AUTO_CODE_TEMPLATES_VIEW)
+            env = Environment(loader=templateLoader)
+        else:
+            templateLoader = FileSystemLoader(self.old_template_path)
+            env = Environment(loader=templateLoader)
+
+        return env.get_template(filename)
+
     def add(self):
-        templateLoader = FileSystemLoader(self.settings.AUTO_CODE_TEMPLATES_VIEW)
-        env = Environment(loader=templateLoader)
         self.__check_folder()
 
-        self.__create_view(env)
-        self.__ceare_orm(env)
-        self.__create_ser(env)
+        self.__create_view()
+        self.__ceare_orm()
+        self.__create_ser()
 
     def refresh(self):
-        templateLoader = FileSystemLoader(self.settings.AUTO_CODE_TEMPLATES_VIEW)
-        env = Environment(loader=templateLoader)
-        self.__create_ser(env)
+        self.__create_ser()
 
     def remove(self):
         for files in [
@@ -105,16 +112,16 @@ class AutoCode(object):
             if path.exists(files):
                 file_remove(files)
 
-    def __create_view(self, env):
-        template = env.get_template('view')
+    def __create_view(self):
+        template = self.__get_templates('view')
 
         with open(path.join(self.settings.AUTO_CODE_VIEW_SAVE_PATH,
                             'view_{}.py'.format(self.file_name)),
                   'w') as f:
             f.write(template.render(view_name=self.view_name, file_name=self.file_name))
 
-    def __ceare_orm(self, env):
-        template = env.get_template('orm')
+    def __ceare_orm(self):
+        template = self.__get_templates('orm')
         str_template = template.render(app=self.app, view_name=self.view_name, file_name=self.file_name)
         str_create = '''
 def create_{1}(req):
@@ -137,8 +144,8 @@ def select_{1}_{2}(obj_{2}):
         with open(path.join(self.settings.AUTO_CODE_ORM_SAVE_PATH, 'orm_{}.py'.format(self.file_name)), 'w') as f:
             f.write(str_template)
 
-    def __create_ser(self, env):
-        template = env.get_template('ser')
+    def __create_ser(self):
+        template = self.__get_templates('ser')
         fields = ""
         for z in filter(lambda x: x['ForeignKey'] == False, self.attribute):
             fields += "'{}',".format(z['value'])
@@ -150,3 +157,11 @@ def select_{1}_{2}(obj_{2}):
                                        fields=fields[:-1], update=update)
         with open(path.join(self.settings.AUTO_CODE_SER_SAVE_PATH, 'ser_{}.py'.format(self.file_name)), 'w') as f:
             f.write(str_template)
+
+    def zdy(self):
+        py_file = path.join(self.settings.AUTO_CODE_TEMPLATES_VIEW, 'zdy.py')
+        if path.exists(py_file):
+            obj_zdy = load_source('auto_zdy', py_file).Zdy(self)
+            obj_zdy.run()
+        else:
+            print('unfind zdy.py files')
