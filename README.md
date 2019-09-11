@@ -1,5 +1,6 @@
 # django_autocode_tools
-	django_autocode_tools是一款根据表名自动生成接口、表的基本orm操作、以及序列化操作代码文件,同时该工具拥有自定义功能,只要稍微修改,你就打造一款适合你的自动化工具,源码提供了样例,可以试用一下
+	django_autocode_tools是一款根据表名自动生成接口、表的基本orm操作、以及序列化操作代码文件,
+	同时该工具拥有自定义功能,只要稍微修改,你就打造一款适合你的自动化工具,源码提供了样例,可以试用一下
 
 ## 安装方法
 	1. pip install django_autocode_tools
